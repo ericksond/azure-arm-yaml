@@ -1,0 +1,62 @@
+---
+"$schema": https://schema.management.azure.com/schemas/2015-01-01/deploymentParameters.json#
+contentVersion: 1.0.0.0
+parameters:
+  containerSASToken:
+    value:
+  containerURL:
+    value:
+  envPrefix:
+    value:
+  resourceGroup:
+    value:
+  location:
+    value: eastus2
+  virtualMachineSize:
+    value: Standard_F1s
+  adminUsername:
+    value: admin
+  virtualNetworkRG:
+    value:
+  virtualNetworkName:
+    value:
+  adminPassword:
+    value:
+  storageAccountType:
+    value: Premium_LRS
+  diagnosticsStorageAccountType:
+    value: Standard_LRS
+  subnetName:
+    value:
+  ipAddresses:
+    value:
+  vmExtensionName:
+    value: ChefExtension
+  chef_client:
+    value: ChefClient
+  chef_node_environment:
+    value: _default
+  chef_server_url:
+    value: https://your-chef-server-url/organizations/org
+  validation_client_name:
+    value: org-validator
+  runlist:
+    value: recipe[getting-started]
+  validation_key:
+    reference:
+      keyVault:
+        id: keyVaultIdAddress
+      secretName: secretName
+  validation_key_format:
+    value: base64encoded
+  secret:
+    reference:
+      keyVault:
+        id: keyVaultIdAddress
+      secretName: secretName
+  chef_service_interval:
+    value: '30'
+  bootstrap_version:
+    value: latest
+  daemon:
+    value: service

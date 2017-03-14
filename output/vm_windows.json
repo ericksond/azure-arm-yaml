@@ -1,0 +1,225 @@
+{
+    "$schema": "http://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "virtualMachineName": {
+            "type": "string"
+        },
+        "storageAccountName": {
+            "type": "string"
+        },
+        "networkInterfaceName": {
+            "type": "string"
+        },
+        "diagnosticsStorageAccountName": {
+            "type": "string"
+        },
+        "diagnosticsStorageAccountId": {
+            "type": "string"
+        },
+        "subnetRef": {
+            "type": "string"
+        },
+        "resourceGroup": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string"
+        },
+        "virtualMachineSize": {
+            "type": "string"
+        },
+        "adminUsername": {
+            "type": "string"
+        },
+        "adminPassword": {
+            "type": "securestring"
+        },
+        "storageAccountType": {
+            "type": "string"
+        },
+        "diagnosticsStorageAccountType": {
+            "type": "string"
+        },
+        "privateIpAddress": {
+            "type": "string"
+        },
+        "vmExtensionName": {
+            "type": "string"
+        },
+        "chef_client": {
+            "type": "string"
+        },
+        "chef_node_environment": {
+            "type": "string"
+        },
+        "chef_server_url": {
+            "type": "string"
+        },
+        "validation_client_name": {
+            "type": "string"
+        },
+        "validation_key": {
+            "type": "securestring"
+        },
+        "validation_key_format": {
+            "type": "string"
+        },
+        "secret": {
+            "type": "securestring"
+        },
+        "chef_service_interval": {
+            "type": "string"
+        },
+        "bootstrap_version": {
+            "type": "string"
+        },
+        "daemon": {
+            "type": "string"
+        },
+        "runlist": {
+            "type": "string"
+        }
+    },
+    "resources": [
+        {
+            "name": "[parameters('virtualMachineName')]",
+            "type": "Microsoft.Compute/virtualMachines",
+            "apiVersion": "2016-04-30-preview",
+            "location": "[parameters('location')]",
+            "dependsOn": [
+                "[concat('Microsoft.Network/networkInterfaces/', parameters('networkInterfaceName'))]",
+                "[concat('Microsoft.Storage/storageAccounts/', parameters('storageAccountName'))]",
+                "[concat('Microsoft.Storage/storageAccounts/', parameters('diagnosticsStorageAccountName'))]"
+            ],
+            "properties": {
+                "osProfile": {
+                    "computerName": "[parameters('virtualMachineName')]",
+                    "adminUsername": "[parameters('adminUsername')]",
+                    "adminPassword": "[parameters('adminPassword')]",
+                    "windowsConfiguration": {
+                        "provisionVmAgent": "true"
+                    }
+                },
+                "hardwareProfile": {
+                    "vmSize": "[parameters('virtualMachineSize')]"
+                },
+                "storageProfile": {
+                    "imageReference": {
+                        "publisher": "MicrosoftWindowsServer",
+                        "offer": "WindowsServer",
+                        "sku": "2012-R2-Datacenter",
+                        "version": "latest"
+                    },
+                    "osDisk": {
+                        "name": "[parameters('virtualMachineName')]",
+                        "createOption": "fromImage",
+                        "vhd": {
+                            "uri": "[concat(concat(reference(resourceId(parameters('resourceGroup'), 'Microsoft.Storage/storageAccounts', parameters('storageAccountName')), '2015-06-15').primaryEndpoints['blob'], 'vhds/'), parameters('virtualMachineName'), '.vhd')]"
+                        }
+                    },
+                    "dataDisks": []
+                },
+                "networkProfile": {
+                    "networkInterfaces": [
+                        {
+                            "id": "[resourceId('Microsoft.Network/networkInterfaces', parameters('networkInterfaceName'))]"
+                        }
+                    ]
+                },
+                "diagnosticsProfile": {
+                    "bootDiagnostics": {
+                        "enabled": true,
+                        "storageUri": "[reference(resourceId(parameters('resourceGroup'), 'Microsoft.Storage/storageAccounts', parameters('diagnosticsStorageAccountName')), '2015-06-15').primaryEndpoints['blob']]"
+                    }
+                }
+            }
+        },
+        {
+            "name": "[parameters('storageAccountName')]",
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2015-06-15",
+            "location": "[parameters('location')]",
+            "properties": {
+                "accountType": "[parameters('storageAccountType')]"
+            }
+        },
+        {
+            "name": "[parameters('diagnosticsStorageAccountName')]",
+            "type": "Microsoft.Storage/storageAccounts",
+            "apiVersion": "2015-06-15",
+            "location": "[parameters('location')]",
+            "properties": {
+                "accountType": "[parameters('diagnosticsStorageAccountType')]"
+            }
+        },
+        {
+            "name": "[parameters('networkInterfaceName')]",
+            "type": "Microsoft.Network/networkInterfaces",
+            "apiVersion": "2016-09-01",
+            "location": "[parameters('location')]",
+            "dependsOn": [],
+            "properties": {
+                "ipConfigurations": [
+                    {
+                        "name": "ipconfig1",
+                        "properties": {
+                            "subnet": {
+                                "id": "[parameters('subnetRef')]"
+                            },
+                            "privateIpAddress": "[parameters('privateIpAddress')]",
+                            "privateIPAllocationMethod": "Static"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "type": "Microsoft.Compute/virtualMachines/extensions",
+            "name": "[concat(parameters('virtualMachineName'),'/', parameters('vmExtensionName'))]",
+            "apiVersion": "2015-05-01-preview",
+            "location": "[resourceGroup().location]",
+            "dependsOn": [
+                "[concat('Microsoft.Compute/virtualMachines/', parameters('virtualMachineName'))]"
+            ],
+            "properties": {
+                "publisher": "Chef.Bootstrap.WindowsAzure",
+                "type": "[parameters('chef_client')]",
+                "typeHandlerVersion": "1210.12",
+                "settings": {
+                    "bootstrap_options": {
+                        "chef_node_name": "[parameters('virtualMachineName')]",
+                        "environment": "[parameters('chef_node_environment')]",
+                        "chef_server_url": "[parameters('chef_server_url')]",
+                        "validation_client_name": "[parameters('validation_client_name')]",
+                        "ssl_verify_mode": ":verify_none"
+                    },
+                    "client_rb": "ssl_verify_mode :verify_none",
+                    "runlist": "[parameters('runlist')]",
+                    "validation_key_format": "[parameters('validation_key_format')]",
+                    "environment_variables": {
+                        "variable_1": "value_1",
+                        "variable_2": "value_2",
+                        "variable_3": "value_3"
+                    },
+                    "chef_service_interval": "18",
+                    "daemon": "service",
+                    "custom_json_attr": {
+                        "container_service": {
+                            "chef-init-test": {
+                                "command": "C:\\opscode\\chef\\bin"
+                            }
+                        }
+                    },
+                    "hints": {
+                        "vm_name": "[reference(parameters('virtualMachineName'))]"
+                    }
+                },
+                "protectedSettings": {
+                    "validation_key": "[parameters('validation_key')]",
+                    "secret": "[parameters('secret')]"
+                }
+            }
+        }
+    ]
+}

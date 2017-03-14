@@ -1,0 +1,199 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "containerSASToken": {
+            "type": "string"
+        },
+        "containerURL": {
+            "type": "string"
+        },
+        "ipAddresses": {
+            "type": "string"
+        },
+        "envPrefix": {
+            "type": "string"
+        },
+        "resourceGroup": {
+            "type": "string"
+        },
+        "location": {
+            "type": "string"
+        },
+        "virtualMachineSize": {
+            "type": "string"
+        },
+        "adminUsername": {
+            "type": "string"
+        },
+        "virtualNetworkRG": {
+            "type": "string"
+        },
+        "virtualNetworkName": {
+            "type": "string"
+        },
+        "adminPassword": {
+            "type": "securestring"
+        },
+        "storageAccountType": {
+            "type": "string"
+        },
+        "diagnosticsStorageAccountType": {
+            "type": "string"
+        },
+        "subnetName": {
+            "type": "string"
+        },
+        "vmExtensionName": {
+            "type": "string"
+        },
+        "chef_client": {
+            "type": "string"
+        },
+        "chef_node_environment": {
+            "type": "string"
+        },
+        "chef_server_url": {
+            "type": "string"
+        },
+        "validation_client_name": {
+            "type": "string"
+        },
+        "validation_key": {
+            "type": "securestring"
+        },
+        "validation_key_format": {
+            "type": "string",
+            "allowedValues": [
+                "plaintext",
+                "base64encoded"
+            ],
+            "defaultValue": "base64encoded"
+        },
+        "secret": {
+            "type": "securestring"
+        },
+        "chef_service_interval": {
+            "type": "string",
+            "defaultValue": "30"
+        },
+        "bootstrap_version": {
+            "type": "string",
+            "defaultValue": "latest"
+        },
+        "daemon": {
+            "type": "string",
+            "allowedValues": [
+                "none",
+                "service",
+                "task"
+            ],
+            "defaultValue": "service"
+        },
+        "runlist": {
+            "type": "string",
+            "defaultValue": "recipe[getting-started]"
+        }
+    },
+    "variables": {
+        "ipArray": "[split(parameters('ipAddresses'), ',')]"
+    },
+    "resources": [
+        {
+            "apiVersion": "2015-01-01",
+            "name": "[concat('vmBase', copyindex())]",
+            "type": "Microsoft.Resources/deployments",
+            "copy": {
+                "name": "deploymentLoop",
+                "count": "[length(variables('ipArray'))]"
+            },
+            "properties": {
+                "mode": "incremental",
+                "templateLink": {
+                    "uri": "[concat(parameters('containerURL'), 'vm_windows.json', parameters('containerSASToken'))]",
+                    "contentVersion": "1.0.0.0"
+                },
+                "parameters": {
+                    "virtualMachineName": {
+                        "value": "[concat(parameters('envPrefix'), padLeft(copyIndex(), 2, '0'))]"
+                    },
+                    "storageAccountName": {
+                        "value": "[concat(parameters('envPrefix'), padLeft(copyIndex(), 2, '0'), 'strgdisk')]"
+                    },
+                    "networkInterfaceName": {
+                        "value": "[concat(parameters('envPrefix'), padLeft(copyIndex(), 2, '0'), 'nic')]"
+                    },
+                    "diagnosticsStorageAccountName": {
+                        "value": "[concat(parameters('envPrefix'), padLeft(copyIndex(), 2, '0'), 'diagdisk')]"
+                    },
+                    "diagnosticsStorageAccountId": {
+                        "value": "[concat('Microsoft.Storage/storageAccounts/', parameters('envPrefix'), padLeft(copyIndex(), 2, '0'), 'diagdisk')]"
+                    },
+                    "subnetRef": {
+                        "value": "[concat(resourceId(parameters('virtualNetworkRG'),'Microsoft.Network/virtualNetworks', parameters('virtualNetworkName')), '/subnets/', parameters('subnetName'))]"
+                    },
+                    "privateIpAddress": {
+                        "value": "[variables('ipArray')[copyIndex()]]"
+                    },
+                    "resourceGroup": {
+                        "value": "[parameters('resourceGroup')]"
+                    },
+                    "location": {
+                        "value": "[parameters('location')]"
+                    },
+                    "virtualMachineSize": {
+                        "value": "[parameters('virtualMachineSize')]"
+                    },
+                    "adminUsername": {
+                        "value": "[parameters('adminUsername')]"
+                    },
+                    "adminPassword": {
+                        "value": "[parameters('adminPassword')]"
+                    },
+                    "storageAccountType": {
+                        "value": "[parameters('storageAccountType')]"
+                    },
+                    "diagnosticsStorageAccountType": {
+                        "value": "[parameters('diagnosticsStorageAccountType')]"
+                    },
+                    "vmExtensionName": {
+                        "value": "[parameters('vmExtensionName')]"
+                    },
+                    "chef_client": {
+                        "value": "[parameters('chef_client')]"
+                    },
+                    "chef_node_environment": {
+                        "value": "[parameters('chef_node_environment')]"
+                    },
+                    "chef_server_url": {
+                        "value": "[parameters('chef_server_url')]"
+                    },
+                    "validation_client_name": {
+                        "value": "[parameters('validation_client_name')]"
+                    },
+                    "validation_key": {
+                        "value": "[parameters('validation_key')]"
+                    },
+                    "validation_key_format": {
+                        "value": "[parameters('validation_key_format')]"
+                    },
+                    "secret": {
+                        "value": "[parameters('secret')]"
+                    },
+                    "chef_service_interval": {
+                        "value": "[parameters('chef_service_interval')]"
+                    },
+                    "bootstrap_version": {
+                        "value": "[parameters('bootstrap_version')]"
+                    },
+                    "daemon": {
+                        "value": "[parameters('daemon')]"
+                    },
+                    "runlist": {
+                        "value": "[parameters('runlist')]"
+                    }
+                }
+            }
+        }
+    ]
+}
